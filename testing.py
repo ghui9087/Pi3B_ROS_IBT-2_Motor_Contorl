@@ -6,6 +6,11 @@ import rospy
 
 from std_msgs.msg import String, Float64
 
+MOTOR1_F_PWM_PIN = 1
+MOTOR1_R_PWM_PIN = 2
+MOTOR2_F_PWM_PIN = 3
+MOTOR2_R_PWM_PIN = 4
+
 # Testing funcation
 # return 'HI' as the respond for the call
 def hello_callback(data):
@@ -22,17 +27,24 @@ def light_callback(data):
         pub_light.publish("LED is On")
 
 def motorContorl(data):
+    global cMotor1Speed, cMotor2Speed
     float motor1Speed = data.data[0]
     float motor2Speed = data.data[1]
-    GPIO.setmode(GPIO.BCM)
+    
+    GPIO.setmode(GPIO.BCM)    
     # Motor 1
-    GPIO.setup(1,GPIO.OUT)
-    GPIO.setup(2,GPIO.OUT)
+    GPIO.setup(MOTOR1_F_PWM_PIN,GPIO.OUT)
+    GPIO.setup(MOTOR1_R_PWM_PIN,GPIO.OUT)
+    motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 4000)  # 4000 Hz frequency
+    motor1_R_pwm = GPIO.PWM(MOTOR1_R_PWM_PIN, 4000)  # 4000 Hz frequency
     # Motor 2
-    GPIO.setup(3,GPIO.OUT)
-    GPIO.setup(4,GPIO.OUT)
+    GPIO.setup(MOTOR2_F_PWM_PIN,GPIO.OUT)
+    GPIO.setup(MOTOR2_R_PWM_PIN,GPIO.OUT)
+    motor2_F_pwm = GPIO.PWM(MOTOR2_F_PWM_PIN, 1000)  # 1000 Hz frequency
+    motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 1000)  # 1000 Hz frequency
+    
     pub_speed.publish("Speed: M1 = %s , M2 = %s", motor1Speed, motor2Speed)
-    if
+    if 
     
 
 
