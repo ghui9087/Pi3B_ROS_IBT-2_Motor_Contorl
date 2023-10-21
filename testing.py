@@ -11,6 +11,22 @@ MOTOR1_R_PWM_PIN = 2
 MOTOR2_F_PWM_PIN = 3
 MOTOR2_R_PWM_PIN = 4
 
+# Motor 1
+GPIO.setmode(GPIO.BCM)    
+GPIO.setup(MOTOR1_F_PWM_PIN,GPIO.OUT)
+GPIO.setup(MOTOR1_R_PWM_PIN,GPIO.OUT)
+motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 4000)  # 4000 Hz frequency
+motor1_R_pwm = GPIO.PWM(MOTOR1_R_PWM_PIN, 4000)  # 4000 Hz frequency
+motor1_F_pwm.start(0)
+motor1_R_pwm.start(0)
+# Motor 2
+GPIO.setup(MOTOR2_F_PWM_PIN,GPIO.OUT)
+GPIO.setup(MOTOR2_R_PWM_PIN,GPIO.OUT)
+motor2_F_pwm = GPIO.PWM(MOTOR2_F_PWM_PIN, 4000)  # 4000 Hz frequency
+motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 4000)  # 4000 Hz frequency
+motor2_F_pwm.start(0)
+motor2_R_pwm.start(0)
+
 # Testing funcation
 # return 'HI' as the respond for the call
 def hello_callback(data):
@@ -30,22 +46,6 @@ def motorContorl(data):
     global cMotor1Speed, cMotor2Speed
     motor1Speed = data.data[0] * 100
     motor2Speed = data.data[1] * 100
-    
-    GPIO.setmode(GPIO.BCM)    
-    # Motor 1
-    GPIO.setup(MOTOR1_F_PWM_PIN,GPIO.OUT)
-    GPIO.setup(MOTOR1_R_PWM_PIN,GPIO.OUT)
-    motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 4000)  # 4000 Hz frequency
-    motor1_R_pwm = GPIO.PWM(MOTOR1_R_PWM_PIN, 4000)  # 4000 Hz frequency
-    motor1_F_pwm.start(0)
-    motor1_R_pwm.start(0)
-    # Motor 2
-    GPIO.setup(MOTOR2_F_PWM_PIN,GPIO.OUT)
-    GPIO.setup(MOTOR2_R_PWM_PIN,GPIO.OUT)
-    motor2_F_pwm = GPIO.PWM(MOTOR2_F_PWM_PIN, 4000)  # 4000 Hz frequency
-    motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 4000)  # 4000 Hz frequency
-    motor2_F_pwm.start(0)
-    motor2_R_pwm.start(0)
 
     pub_speed.publish("Speed: M1 = %s , M2 = %s", motor1Speed, motor2Speed)
     if motor1Speed >= 0:
@@ -66,6 +66,12 @@ def motorContorl(data):
     cMotor1Speed = motor1Speed
     cMotor2Speed = motor2Speed
 
+def clearUP():
+    motor1_F_pwm.stop()
+    motor1_R_pwm.stop()
+    motor2_F_pwm.stop()
+    motor2_R_pwm.stop()
+
 if __name__ == '__main__':
     rospy.init_node('listener')
     pub_hello = rospy.Publisher('hello', String, latch=True, queue_size=10)
@@ -80,4 +86,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Shutting down")
     finally:
+        clearUP()
         GPIO.cleanup()
