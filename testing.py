@@ -47,7 +47,7 @@ def motorContorl(data):
     motor1Speed = data.data[0] * 100
     motor2Speed = data.data[1] * 100
 
-    pub_speed.publish("Speed: M1 = %s , M2 = %s", motor1Speed, motor2Speed)
+    pub_speed.publish("Speed: M1 = %d , M2 = %d", motor1Speed, motor2Speed)
     if motor1Speed >= 0:
         motor1_R_pwm.ChangeDutyCycle(0)
         motor1_F_pwm.ChangeDutyCycle(abs(motor1Speed))
