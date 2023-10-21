@@ -28,8 +28,8 @@ def light_callback(data):
 
 def motorContorl(data):
     global cMotor1Speed, cMotor2Speed
-    float motor1Speed = data.data[0]
-    float motor2Speed = data.data[1]
+    motor1Speed = data.data[0] * 100
+    motor2Speed = data.data[1] * 100
     
     GPIO.setmode(GPIO.BCM)    
     # Motor 1
@@ -37,16 +37,34 @@ def motorContorl(data):
     GPIO.setup(MOTOR1_R_PWM_PIN,GPIO.OUT)
     motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 4000)  # 4000 Hz frequency
     motor1_R_pwm = GPIO.PWM(MOTOR1_R_PWM_PIN, 4000)  # 4000 Hz frequency
+    motor1_F_pwm.start(0)
+    motor1_R_pwm.start(0)
     # Motor 2
     GPIO.setup(MOTOR2_F_PWM_PIN,GPIO.OUT)
     GPIO.setup(MOTOR2_R_PWM_PIN,GPIO.OUT)
-    motor2_F_pwm = GPIO.PWM(MOTOR2_F_PWM_PIN, 1000)  # 1000 Hz frequency
-    motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 1000)  # 1000 Hz frequency
-    
-    pub_speed.publish("Speed: M1 = %s , M2 = %s", motor1Speed, motor2Speed)
-    if 
-    
+    motor2_F_pwm = GPIO.PWM(MOTOR2_F_PWM_PIN, 4000)  # 4000 Hz frequency
+    motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 4000)  # 4000 Hz frequency
+    motor2_F_pwm.start(0)
+    motor2_R_pwm.start(0)
 
+    pub_speed.publish("Speed: M1 = %s , M2 = %s", motor1Speed, motor2Speed)
+    if motor1Speed >= 0:
+        motor1_R_pwm.ChangeDutyCycle(0)
+        motor1_F_pwm.ChangeDutyCycle(abs(motor1Speed))
+    else:
+        motor1_F_pwm.ChangeDutyCycle(0)
+        motor1_R_pwm.ChangeDutyCycle(abs(motor1Speed))
+
+    if motor2Speed >= 0:
+        motor2_R_pwm.ChangeDutyCycle(0)
+        motor2_F_pwm.ChangeDutyCycle(abs(motor2Speed))
+    else:
+        motor2_F_pwm.ChangeDutyCycle(0)
+        motor2_R_pwm.ChangeDutyCycle(abs(motor2Speed))
+
+    # Update the speed to global
+    cMotor1Speed = motor1Speed
+    cMotor2Speed = motor2Speed
 
 if __name__ == '__main__':
     rospy.init_node('listener')
