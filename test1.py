@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # importaing the GPIO as the PBPI for 3B+ and 4 or higher
 import RPi.GPIO as GPIO
@@ -24,6 +24,4 @@ if __name__ == '__main__':
         rospy.spin()
     except KeyboardInterrupt:
         print("Shutting down")
-    finally:
-        clearUP()
-        GPIO.cleanup()
+    # finally:
