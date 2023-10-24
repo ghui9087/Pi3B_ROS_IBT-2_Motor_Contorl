@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # importaing the GPIO as the PBPI for 3B+ and 4 or higher
 import RPi.GPIO as GPIO
