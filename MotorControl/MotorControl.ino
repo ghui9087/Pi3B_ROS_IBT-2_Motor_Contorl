@@ -22,15 +22,24 @@ int Motor2_FRPM = 8;
 
 void setup()
 {
+  Serial.begin(9600);
+  while (!Serial)
+  {
+    ;
+  }
+
+  
+
+  // Motor 1 setup ide
   pinMode(Motor1_RPWM, OUTPUT);
   pinMode(Motor1_FRPM, OUTPUT);
 
+  // Motor 2 setup ide
   pinMode(Motor2_RPWM, OUTPUT);
   pinMode(Motor2_FRPM, OUTPUT);
 }
 
-void loop()
-{
+void loop(){
   int messageFromRBPI = 000000;
   // TODO: Adding the code for the system to sending from the RBPI to the Arduino
 
@@ -62,4 +71,11 @@ void loop()
   {
     analogWrite(Motor1_FRPM, 0);
     analogWrite(Motor1_RPWM, data[1]);
+}
+}
+
+void sendingTheOB() {
+
+
+
 }
