@@ -21,16 +21,13 @@ int Motor2_RPWM = 7;
 int Motor2_FRPM = 8;
 
 // defult LED On the ESP8266 D1
-int ledPin = 14;
+uint8_t ledPin = LED_BUILTIN;
+
+bool bufferStringComplete = false;
+String inputString = "";
 
 void setup()
 {
-  Serial.begin(9600);
-  while (!Serial)
-  {
-    ;
-  }
-
   // Motor 1 setup ide
   pinMode(Motor1_RPWM, OUTPUT);
   pinMode(Motor1_FRPM, OUTPUT);
@@ -40,42 +37,71 @@ void setup()
   pinMode(Motor2_FRPM, OUTPUT);
 
   pinMode(ledPin, OUTPUT);
+
+  Serial.begin(9600);
+  while (!Serial)
+  {
+    ;
+  }
+  while (Serial.available() <= 0)
+  {
+    sendingTheOB();
+    delay(200);
+  }
 }
 
 void loop()
 {
-  sendingTheOB();
+
   int messageFromRBPI = 000000;
   // TODO: Adding the code for the system to sending from the RBPI to the Arduino
-
-  // END TODO:
-  int data[4] = {};
-
-  data[0] = messageFromRBPI / 10000;
-  messageFromRBPI = messageFromRBPI - messageFromRBPI / 10000;
-  data[1] = messageFromRBPI / 100;
-  messageFromRBPI = messageFromRBPI - messageFromRBPI / 100;
-  data[2] = messageFromRBPI / 10;
-  data[3] = messageFromRBPI - messageFromRBPI / 10;
-
-  // Motor 1 contorl speed from the RBPI to the setting the PWM signal
-  // forward rotation
-  analogWrite(Motor1_RPWM, 0);
-  analogWrite(Motor1_FRPM, data[0]);
-  if (data[2] == 0)
+  if (bufferStringComplete)
   {
-    analogWrite(Motor1_FRPM, 0);
-    analogWrite(Motor1_RPWM, data[0]);
+    if (inputString.startsWith("status"))
+    {
+      sendingTheOB();
+    } else if (inputString.startsWith("speed"))
+    {
+
+      // END TODO:
+      // int data[4] = {};
+
+      // data[0] = messageFromRBPI / 10000;
+      // messageFromRBPI = messageFromRBPI - messageFromRBPI / 10000;
+      // data[1] = messageFromRBPI / 100;
+      // messageFromRBPI = messageFromRBPI - messageFromRBPI / 100;
+      // data[2] = messageFromRBPI / 10;
+      // data[3] = messageFromRBPI - messageFromRBPI / 10;
+
+      // // Motor 1 contorl speed from the RBPI to the setting the PWM signal
+      // // forward rotation
+      // analogWrite(Motor1_RPWM, 0);
+      // analogWrite(Motor1_FRPM, data[0]);
+      // if (data[2] == 0)
+      // {
+      //   analogWrite(Motor1_FRPM, 0);
+      //   analogWrite(Motor1_RPWM, data[0]);
+      // }
+
+      // // Motor 2 contorl speed from the RBPI to the setting the PWM signal
+      // // forward rotation
+      // analogWrite(Motor1_RPWM, 0);
+      // analogWrite(Motor1_FRPM, data[1]);
+      // if (data[3] == 0)
+      // {
+      //   analogWrite(Motor1_FRPM, 0);
+      //   analogWrite(Motor1_RPWM, data[1]);
+      // }
+    }
+    // reset the command
+    bufferStringComplete = false;
+    inputString = "";
   }
-
-  // Motor 2 contorl speed from the RBPI to the setting the PWM signal
-  // forward rotation
-  analogWrite(Motor1_RPWM, 0);
-  analogWrite(Motor1_FRPM, data[1]);
-  if (data[3] == 0)
+  // command delay
+  delay(10);
+  if (Serial.available() > 0)
   {
-    analogWrite(Motor1_FRPM, 0);
-    analogWrite(Motor1_RPWM, data[1]);
+    serialEventListerner();
   }
 }
 
@@ -83,5 +109,23 @@ void sendingTheOB()
 {
   char buffer[50];
   digitalWrite(ledPin, HIGH);
+  sprintf(buffer, "LED ON");
+  Serial.println(buffer);
+  delay(500);
+  sprintf(buffer, "LED ON");
+  Serial.println(buffer);
+  digitalWrite(LED_BUILTIN, LOW);
+}
 
+void serialEventListerner()
+{
+  while (Serial.available())
+  {
+    char inchar = (char)Serial.read();
+    inputString += inchar;
+    if (inchar == '\n')
+    {
+      bufferStringComplete = true;
+    }
+  }
 }
