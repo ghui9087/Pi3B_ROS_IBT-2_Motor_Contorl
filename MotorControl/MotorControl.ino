@@ -20,6 +20,9 @@ int Motor1_FRPM = 6;
 int Motor2_RPWM = 7;
 int Motor2_FRPM = 8;
 
+// defult LED On the ESP8266 D1
+int ledPin = 14;
+
 void setup()
 {
   Serial.begin(9600);
@@ -28,8 +31,6 @@ void setup()
     ;
   }
 
-  
-
   // Motor 1 setup ide
   pinMode(Motor1_RPWM, OUTPUT);
   pinMode(Motor1_FRPM, OUTPUT);
@@ -37,9 +38,13 @@ void setup()
   // Motor 2 setup ide
   pinMode(Motor2_RPWM, OUTPUT);
   pinMode(Motor2_FRPM, OUTPUT);
+
+  pinMode(ledPin, OUTPUT);
 }
 
-void loop(){
+void loop()
+{
+  sendingTheOB();
   int messageFromRBPI = 000000;
   // TODO: Adding the code for the system to sending from the RBPI to the Arduino
 
@@ -71,11 +76,12 @@ void loop(){
   {
     analogWrite(Motor1_FRPM, 0);
     analogWrite(Motor1_RPWM, data[1]);
+  }
 }
-}
 
-void sendingTheOB() {
-
-
+void sendingTheOB()
+{
+  char buffer[50];
+  digitalWrite(ledPin, HIGH);
 
 }
