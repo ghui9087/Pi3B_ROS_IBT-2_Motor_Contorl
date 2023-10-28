@@ -26,6 +26,8 @@ uint8_t ledPin = LED_BUILTIN;
 bool bufferStringComplete = false;
 String inputString = "";
 
+int data[4] = {0, 0, 0, 0};
+
 void setup()
 {
   // Motor 1 setup ide
@@ -57,41 +59,42 @@ void loop()
   // TODO: Adding the code for the system to sending from the RBPI to the Arduino
   if (bufferStringComplete)
   {
+    // Base status information checking
     if (inputString.startsWith("status"))
     {
       sendingTheOB();
-    } else if (inputString.startsWith("speed"))
+    }
+    else if (inputString.startsWith("speed"))
     {
 
       // END TODO:
-      // int data[4] = {};
 
-      // data[0] = messageFromRBPI / 10000;
-      // messageFromRBPI = messageFromRBPI - messageFromRBPI / 10000;
-      // data[1] = messageFromRBPI / 100;
-      // messageFromRBPI = messageFromRBPI - messageFromRBPI / 100;
-      // data[2] = messageFromRBPI / 10;
-      // data[3] = messageFromRBPI - messageFromRBPI / 10;
+      data[0] = messageFromRBPI / 10000;
+      messageFromRBPI = messageFromRBPI - messageFromRBPI / 10000;
+      data[1] = messageFromRBPI / 100;
+      messageFromRBPI = messageFromRBPI - messageFromRBPI / 100;
+      data[2] = messageFromRBPI / 10;
+      data[3] = messageFromRBPI - messageFromRBPI / 10;
 
-      // // Motor 1 contorl speed from the RBPI to the setting the PWM signal
-      // // forward rotation
-      // analogWrite(Motor1_RPWM, 0);
-      // analogWrite(Motor1_FRPM, data[0]);
-      // if (data[2] == 0)
-      // {
-      //   analogWrite(Motor1_FRPM, 0);
-      //   analogWrite(Motor1_RPWM, data[0]);
-      // }
+      // Motor 1 contorl speed from the RBPI to the setting the PWM signal
+      // forward rotation
+      analogWrite(Motor1_RPWM, 0);
+      analogWrite(Motor1_FRPM, data[0]);
+      if (data[2] == 0)
+      {
+        analogWrite(Motor1_FRPM, 0);
+        analogWrite(Motor1_RPWM, data[0]);
+      }
 
-      // // Motor 2 contorl speed from the RBPI to the setting the PWM signal
-      // // forward rotation
-      // analogWrite(Motor1_RPWM, 0);
-      // analogWrite(Motor1_FRPM, data[1]);
-      // if (data[3] == 0)
-      // {
-      //   analogWrite(Motor1_FRPM, 0);
-      //   analogWrite(Motor1_RPWM, data[1]);
-      // }
+      // Motor 2 contorl speed from the RBPI to the setting the PWM signal
+      // forward rotation
+      analogWrite(Motor1_RPWM, 0);
+      analogWrite(Motor1_FRPM, data[1]);
+      if (data[3] == 0)
+      {
+        analogWrite(Motor1_FRPM, 0);
+        analogWrite(Motor1_RPWM, data[1]);
+      }
     }
     // reset the command
     bufferStringComplete = false;
@@ -105,18 +108,24 @@ void loop()
   }
 }
 
+/**
+ * Status Chekcing with the Buildign board LED flash once
+ * Once the LEC flash once It mean the report have send back on the UART
+ */
 void sendingTheOB()
 {
   char buffer[50];
+  sprintf(buffer, "Current Speed %c, %d%%, %c, %d%%", data[2], data[0], data[3], data[1]);
+  Serial.println(buffer);
   digitalWrite(ledPin, HIGH);
-  sprintf(buffer, "LED ON");
-  Serial.println(buffer);
-  delay(500);
-  sprintf(buffer, "LED ON");
-  Serial.println(buffer);
+  delay(50);
   digitalWrite(LED_BUILTIN, LOW);
 }
 
+/**
+ * Listerner that Listern the UART from the Serial
+ * Just Listerner not judgement
+*/
 void serialEventListerner()
 {
   while (Serial.available())
