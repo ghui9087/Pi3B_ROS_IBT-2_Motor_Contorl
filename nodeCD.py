@@ -23,9 +23,13 @@ def hello_callback(data):
 #  01      98      1       0
 #  Speed   Speed   Dir     Dir
 #  Motor1  Motor2  Motor1  Motor2
-def tesitngIBT2(data):
-    motor1Speed = data.data[0] * 100
-    motor2Speed = data.data[1] * 100
+def tesitngIBT2(data, testing = {1, 0, 0}):
+    motor1Speed = testing[1]
+    motor2Speed = testing[2]
+    if(testing[0] == 1):
+        motor1Speed = data.data[0] * 100
+        motor2Speed = data.data[1] * 100
+    
     motor1Dir = True
     motor2Dir = True
     ser = serial.Serial()
@@ -52,7 +56,10 @@ def tesitngIBT2(data):
 if __name__ == '__main__':
     rospy.init_node('listener')
     pub_hello = rospy.Publisher('hello', String, latch=True, queue_size=10)
+    pub_speed = rospy.Publisher('speed', Float64, latch=True, queue_size=10)
     rospy.Subscriber("hello", String, hello_callback)
+    rospy.Subscriber("motorcontorl", Float64, tesitngIBT2)
+
 
     try:
         rospy.spin()

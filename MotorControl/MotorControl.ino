@@ -17,8 +17,8 @@ IBT-2 pins 5 (R_IS) and 6 (L_IS) not connected
 int Motor1_RPWM = 5;
 int Motor1_FRPM = 6;
 
-int Motor2_RPWM = 7;
-int Motor2_FRPM = 8;
+int Motor2_RPWM = 9;
+int Motor2_FRPM = 10;
 
 // defult LED On the ESP8266 D1
 uint8_t ledPin = LED_BUILTIN;
@@ -26,7 +26,8 @@ uint8_t ledPin = LED_BUILTIN;
 bool bufferStringComplete = false;
 String inputString = "";
 
-int data[4] = {0, 0, 0, 0};
+int motor1S = 0;
+int motor2S = 0;
 
 void setup()
 {
@@ -55,7 +56,6 @@ void setup()
 void loop()
 {
 
-  int messageFromRBPI = 000000;
   // TODO: Adding the code for the system to sending from the RBPI to the Arduino
   if (bufferStringComplete)
   {
@@ -66,34 +66,46 @@ void loop()
     }
     else if (inputString.startsWith("speed"))
     {
-
-      // END TODO:
-
-      data[0] = messageFromRBPI / 10000;
-      messageFromRBPI = messageFromRBPI - messageFromRBPI / 10000;
-      data[1] = messageFromRBPI / 100;
-      messageFromRBPI = messageFromRBPI - messageFromRBPI / 100;
-      data[2] = messageFromRBPI / 10;
-      data[3] = messageFromRBPI - messageFromRBPI / 10;
-
-      // Motor 1 contorl speed from the RBPI to the setting the PWM signal
-      // forward rotation
-      analogWrite(Motor1_RPWM, 0);
-      analogWrite(Motor1_FRPM, data[0]);
-      if (data[2] == 0)
+      inputString.remove(0, 5);
+      inputString.remove(inputString.length() - 1);
+      if (isStringDigit(inputString))
       {
-        analogWrite(Motor1_FRPM, 0);
-        analogWrite(Motor1_RPWM, data[0]);
+        if (inputString.startsWith("1"))
+        {
+          inputString.remove(0, 1);
+          unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
+          motor1S = messageFromRBPI;
+          // Motor 1 contorl speed from the RBPI to the setting the PWM signal
+          // forward rotation
+          analogWrite(Motor1_RPWM, 0);
+          analogWrite(Motor1_FRPM, abs(motor1S));
+          if (motor1S < 0)
+          {
+            analogWrite(Motor1_FRPM, 0);
+            analogWrite(Motor1_RPWM, abs(motor1S));
+          }
+          sendingTheOB();
+        }
+        else
+        {
+          inputString.remove(0, 1);
+          unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
+          motor2S = messageFromRBPI;
+          // Motor 2 contorl speed from the RBPI to the setting the PWM signal
+          // forward rotation
+          analogWrite(Motor2_RPWM, 0);
+          analogWrite(Motor2_FRPM, abs(motor2S));
+          if (abs(motor2S) < 0)
+          {
+            analogWrite(Motor2_FRPM, 0);
+            analogWrite(Motor2_RPWM, abs(motor2S));
+          }
+          sendingTheOB();
+        }
       }
-
-      // Motor 2 contorl speed from the RBPI to the setting the PWM signal
-      // forward rotation
-      analogWrite(Motor1_RPWM, 0);
-      analogWrite(Motor1_FRPM, data[1]);
-      if (data[3] == 0)
+      else
       {
-        analogWrite(Motor1_FRPM, 0);
-        analogWrite(Motor1_RPWM, data[1]);
+        Serial.println("Speed Data Is increcing");
       }
     }
     // reset the command
@@ -115,7 +127,7 @@ void loop()
 void sendingTheOB()
 {
   char buffer[50];
-  sprintf(buffer, "Current Speed %c, %d%%, %c, %d%%", data[2], data[0], data[3], data[1]);
+  sprintf(buffer, "Current Speed 1: %d%%, 2: %d%%%", motor1S, motor2S);
   Serial.println(buffer);
   digitalWrite(ledPin, HIGH);
   delay(50);
@@ -125,7 +137,7 @@ void sendingTheOB()
 /**
  * Listerner that Listern the UART from the Serial
  * Just Listerner not judgement
-*/
+ */
 void serialEventListerner()
 {
   while (Serial.available())
@@ -137,4 +149,21 @@ void serialEventListerner()
       bufferStringComplete = true;
     }
   }
+}
+
+bool isStringDigit(String data)
+{
+  for (int i = 0; i < inputString.length(); i++)
+  {
+    if (i == 1 && inputString[i] == '-')
+    {
+      continue;
+    }
+
+    if (!isdigit(inputString[i]))
+    {
+      return false;
+    }
+  }
+  return true;
 }
