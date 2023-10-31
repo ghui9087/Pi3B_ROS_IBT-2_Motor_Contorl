@@ -11,10 +11,10 @@ def tesitngIBT2(data, testing = [1, 0, 0]):
     
     motor1Dir = True
     motor2Dir = True
-    # ser = serial.Serial()
+    ser = serial.Serial()
     
-    # ser.baudrate = serBaudrate
-    # ser.port = serPort
+    ser.baudrate = serBaudrate
+    ser.port = serPort
 
     if motor1Speed < 0:
         motor1Dir = False

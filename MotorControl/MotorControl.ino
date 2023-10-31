@@ -29,8 +29,7 @@ String inputString = "";
 int motor1S = 0;
 int motor2S = 0;
 
-void setup()
-{
+void setup() {
   // Motor 1 setup ide
   pinMode(Motor1_RPWM, OUTPUT);
   pinMode(Motor1_FRPM, OUTPUT);
@@ -42,36 +41,27 @@ void setup()
   pinMode(ledPin, OUTPUT);
 
   Serial.begin(9600);
-  while (!Serial)
-  {
+  while (!Serial) {
     ;
   }
-  while (Serial.available() <= 0)
-  {
+  while (Serial.available() <= 0) {
     sendingTheOB();
     delay(200);
   }
 }
 
-void loop()
-{
+void loop() {
 
   // TODO: Adding the code for the system to sending from the RBPI to the Arduino
-  if (bufferStringComplete)
-  {
+  if (bufferStringComplete) {
     // Base status information checking
-    if (inputString.startsWith("status"))
-    {
+    if (inputString.startsWith("status")) {
       sendingTheOB();
-    }
-    else if (inputString.startsWith("speed"))
-    {
+    } else if (inputString.startsWith("speed")) {
       inputString.remove(0, 5);
       inputString.remove(inputString.length() - 1);
-      if (isStringDigit(inputString))
-      {
-        if (inputString.startsWith("1"))
-        {
+      if (isStringDigit(inputString)) {
+        if (inputString.startsWith("0")) {
           inputString.remove(0, 1);
           unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
           motor1S = messageFromRBPI;
@@ -79,32 +69,26 @@ void loop()
           // forward rotation
           analogWrite(Motor1_RPWM, 0);
           analogWrite(Motor1_FRPM, abs(motor1S));
-          if (motor1S < 0)
-          {
+          if (motor1S < 0) {
             analogWrite(Motor1_FRPM, 0);
             analogWrite(Motor1_RPWM, abs(motor1S));
           }
           sendingTheOB();
-        }
-        else
-        {
+        } else {
           inputString.remove(0, 1);
           unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
           motor2S = messageFromRBPI;
           // Motor 2 contorl speed from the RBPI to the setting the PWM signal
           // forward rotation
-          analogWrite(Motor2_RPWM, 0);
-          analogWrite(Motor2_FRPM, abs(motor2S));
-          if (abs(motor2S) < 0)
-          {
-            analogWrite(Motor2_FRPM, 0);
-            analogWrite(Motor2_RPWM, abs(motor2S));
+          analogWrite(Motor2_FRPM, 0);
+          analogWrite(Motor2_RPWM, abs(motor2S));
+          if (abs(motor2S) < 0) {
+            analogWrite(Motor2_RPWM, 0);
+            analogWrite(Motor2_FRPM, abs(motor2S));
           }
           sendingTheOB();
         }
-      }
-      else
-      {
+      } else {
         Serial.println("Speed Data Is increcing");
       }
     }
@@ -114,8 +98,7 @@ void loop()
   }
   // command delay
   delay(10);
-  if (Serial.available() > 0)
-  {
+  if (Serial.available() > 0) {
     serialEventListerner();
   }
 }
@@ -124,8 +107,7 @@ void loop()
  * Status Chekcing with the Buildign board LED flash once
  * Once the LEC flash once It mean the report have send back on the UART
  */
-void sendingTheOB()
-{
+void sendingTheOB() {
   char buffer[50];
   sprintf(buffer, "Current Speed 1: %d%%, 2: %d%%%", motor1S, motor2S);
   Serial.println(buffer);
@@ -138,30 +120,23 @@ void sendingTheOB()
  * Listerner that Listern the UART from the Serial
  * Just Listerner not judgement
  */
-void serialEventListerner()
-{
-  while (Serial.available())
-  {
+void serialEventListerner() {
+  while (Serial.available()) {
     char inchar = (char)Serial.read();
     inputString += inchar;
-    if (inchar == '\n')
-    {
+    if (inchar == '\n') {
       bufferStringComplete = true;
     }
   }
 }
 
-bool isStringDigit(String data)
-{
-  for (int i = 0; i < inputString.length(); i++)
-  {
-    if (i == 1 && inputString[i] == '-')
-    {
+bool isStringDigit(String data) {
+  for (int i = 0; i < inputString.length(); i++) {
+    if (i == 1 && inputString[i] == '-') {
       continue;
     }
 
-    if (!isdigit(inputString[i]))
-    {
+    if (!isdigit(inputString[i])) {
       return false;
     }
   }

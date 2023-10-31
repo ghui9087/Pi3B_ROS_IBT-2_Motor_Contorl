@@ -23,31 +23,34 @@ def hello_callback(data):
 #  01      98      1       0
 #  Speed   Speed   Dir     Dir
 #  Motor1  Motor2  Motor1  Motor2
-def tesitngIBT2(data, testing = {1, 0, 0}):
+def tesitngIBT2(data, testing = [1, 0, 0]):
+    serPort = 'COM1'
+    serBaudrate = 9600
     motor1Speed = testing[1]
     motor2Speed = testing[2]
     if(testing[0] == 1):
         motor1Speed = data.data[0] * 100
         motor2Speed = data.data[1] * 100
-    
-    motor1Dir = True
-    motor2Dir = True
+
     ser = serial.Serial()
     
     ser.baudrate = serBaudrate
     ser.port = serPort
 
-    if motor1Speed < 0:
-        motor1Dir = False
-    if motor2Speed < 0:
-        motor2Dir = False
+    ser.write(b"status\n")
 
-    dataSent = abs(motor1Speed) * 100
-    dataSent += abs(motor2Speed)
-    dataSent = dataSent * 100 + motor1Dir * 10 + motor2Dir
+    bin_strM1 = bin("speed1"+ motor1Speed + "\n")
+    ser.write(bin_strM1)
 
-    # Sending the messgae to the Arduino From path UART
+    
+    bin_strM2 = bin("speed2"+ motor2Speed + "\n")
+    ser.write(bin_strM2)
 
+    # input_str = ser.readline().decode("utf-8").strip()
+    # if input_str == "":
+    #     print(".")
+    # else:
+    #     print("Read input back: " + input_str)
 
     return 0
 
