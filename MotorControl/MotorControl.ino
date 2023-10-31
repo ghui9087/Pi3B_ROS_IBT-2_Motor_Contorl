@@ -23,13 +23,14 @@ int Motor2_FRPM = 10;
 // defult LED On the ESP8266 D1
 uint8_t ledPin = LED_BUILTIN;
 
-bool bufferStringComplete = false;
+bool bufferString = false;
 String inputString = "";
 
 int motor1S = 0;
 int motor2S = 0;
 
-void setup() {
+void setup()
+{
   // Motor 1 setup ide
   pinMode(Motor1_RPWM, OUTPUT);
   pinMode(Motor1_FRPM, OUTPUT);
@@ -38,76 +39,134 @@ void setup() {
   pinMode(Motor2_RPWM, OUTPUT);
   pinMode(Motor2_FRPM, OUTPUT);
 
+  // Defult LED pin setup ide
   pinMode(ledPin, OUTPUT);
 
   Serial.begin(9600);
-  while (!Serial) {
+
+  // if the Serial is not being connect to the other system that support the Serial
+  // Puse the command here
+  while (!Serial)
+  {
     ;
   }
-  while (Serial.available() <= 0) {
+
+  // Once the Serial is connect to the other system that support the Serial
+  // loop the current status until First command have being send from the UART
+  while (Serial.available() <= 0)
+  {
     sendingTheOB();
     delay(200);
   }
 }
 
-void loop() {
+// While loop that will not be stop unless the Ardurino Board is crash
+void loop()
+{
 
-  // TODO: Adding the code for the system to sending from the RBPI to the Arduino
-  if (bufferStringComplete) {
+  // If the bufferString is still in read or it was not finish, Skip during this loop
+  if (bufferString)
+  {
     // Base status information checking
-    if (inputString.startsWith("status")) {
+    if (inputString.startsWith("status"))
+    {
       sendingTheOB();
-    } else if (inputString.startsWith("speed")) {
+    }
+    // Gettng speed fro mthe command "speed"
+    else if (inputString.startsWith("speed"))
+    {
       inputString.remove(0, 5);
       inputString.remove(inputString.length() - 1);
-      if (isStringDigit(inputString)) {
-        if (inputString.startsWith("0")) {
+
+      // Checking if the Motor speed and the select is in the digit format
+      // It can chekcing if the motor is in the negivte value
+      if (isStringDigit(inputString))
+      {
+
+        // Chekcing if the motor select is the Motor ID: 0
+        if (inputString.startsWith("0"))
+        {
           inputString.remove(0, 1);
           unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
           motor1S = messageFromRBPI;
+
           // Motor 1 contorl speed from the RBPI to the setting the PWM signal
           // forward rotation
           analogWrite(Motor1_RPWM, 0);
           analogWrite(Motor1_FRPM, abs(motor1S));
-          if (motor1S < 0) {
+
+          // reverse rotation
+          if (motor1S < 0)
+          {
             analogWrite(Motor1_FRPM, 0);
             analogWrite(Motor1_RPWM, abs(motor1S));
           }
+
+          // Return the current status of both motor
           sendingTheOB();
-        } else {
+        }
+        // Chekcing if the motor select is the Motor ID: 1
+        else if (inputString.startsWith("1"))
+        {
           inputString.remove(0, 1);
           unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
           motor2S = messageFromRBPI;
+
           // Motor 2 contorl speed from the RBPI to the setting the PWM signal
           // forward rotation
           analogWrite(Motor2_FRPM, 0);
           analogWrite(Motor2_RPWM, abs(motor2S));
-          if (abs(motor2S) < 0) {
+
+          // reverse rotation
+          if (motor2S < 0)
+          {
             analogWrite(Motor2_RPWM, 0);
             analogWrite(Motor2_FRPM, abs(motor2S));
           }
+
+          // Return the current status of both motor
           sendingTheOB();
         }
-      } else {
-        Serial.println("Speed Data Is increcing");
+        // If they are not both Return the ERROR
+        else
+        {
+          Serial.println("Speed Data Error:/n Can not select the Motor ID:" + inputString);
+        }
+      }
+      // If the motor inforamtion is not the digit after the word "speed" Return ERROR
+      else
+      {
+        Serial.println("Speed Data Error: /n Motor is not in the digit format");
       }
     }
+    // If the command is not else status or speed Return the ERROR invald command
+    else
+    {
+      Serial.println("Inviald Command");
+    }
     // reset the command
-    bufferStringComplete = false;
+    bufferString = false;
     inputString = "";
   }
-  // command delay
+  // command delay 10ms
   delay(10);
-  if (Serial.available() > 0) {
+  
+  // Once the Serial is available running the serial listerner 
+  if (Serial.available() > 0)
+  {
     serialEventListerner();
   }
 }
 
 /**
- * Status Chekcing with the Buildign board LED flash once
+ * Status Chekcing with the Building board LED flash once
+ * This will return the both motor current speed at the same time
+ * They will return in this formart:
+ * Current Speed1: x%, 2: x%
  * Once the LEC flash once It mean the report have send back on the UART
  */
-void sendingTheOB() {
+void sendingTheOB()
+{
   char buffer[50];
   sprintf(buffer, "Current Speed 1: %d%%, 2: %d%%%", motor1S, motor2S);
   Serial.println(buffer);
@@ -118,25 +177,42 @@ void sendingTheOB() {
 
 /**
  * Listerner that Listern the UART from the Serial
+ * Lister only lister the command that is send fro mthe Serial that In beingfarmat in the uart.
+ * And they need to be in binery
+ * Once the serial recived the command, It will cover they back to string form
+ * They will be add into the inputString
+ * And rest the bufferString to true
  * Just Listerner not judgement
  */
-void serialEventListerner() {
-  while (Serial.available()) {
+void serialEventListerner()
+{
+  while (Serial.available())
+  {
     char inchar = (char)Serial.read();
     inputString += inchar;
-    if (inchar == '\n') {
-      bufferStringComplete = true;
+    if (inchar == '\n')
+    {
+      bufferString = true;
     }
   }
 }
 
-bool isStringDigit(String data) {
-  for (int i = 0; i < inputString.length(); i++) {
-    if (i == 1 && inputString[i] == '-') {
+/** 
+ * Checking if the String is pure digit or else
+ * If they are not pure digit it will return false
+ * else return true
+*/
+bool isStringDigit(String data)
+{
+  for (int i = 0; i < inputString.length(); i++)
+  {
+    if (i == 1 && inputString[i] == '-')
+    {
       continue;
     }
 
-    if (!isdigit(inputString[i])) {
+    if (!isdigit(inputString[i]))
+    {
       return false;
     }
   }
