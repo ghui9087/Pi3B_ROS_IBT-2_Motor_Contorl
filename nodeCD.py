@@ -6,8 +6,8 @@ import time
 
 from std_msgs.msg import String, Float64MultiArray
 
-serBaudrate = 9600
-motorPower = 100
+_serBaudrate = 9600
+_motorPower = 100
 
 # Testing funcation
 # return 'HI' as the respond for the call
@@ -20,14 +20,14 @@ def hello_callback(data):
 def motorPower(data):
     input_str = data.data
     if input_str.startwith("speed"):
-        int(input_str.lstrip('speed'))
+        _motorPower = int(input_str.lstrip('speed'))
     return 1
 
 
 def tesitngIBT2(data):
 
-    motor1Speed = data.data[0] * motorPower
-    motor2Speed = data.data[1] * motorPower
+    motor1Speed = data.data[0] * _motorPower
+    motor2Speed = data.data[1] * _motorPower
 
     ser.write(b"status\n")
     lister()
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     except SerialException:
         ser = serial.Serial('/dev/ttyACM0')
 
-    ser.baudrate = serBaudrate
+    ser.baudrate = _serBaudrate
 
     ser.write(b"status\n")
     input_str = ser.readline().decode("utf-8").strip()
