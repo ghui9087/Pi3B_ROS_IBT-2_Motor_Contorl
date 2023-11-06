@@ -6,8 +6,8 @@ import rospy
 
 from std_msgs.msg import String, Float64
 
-MOTOR1_F_PWM_PIN = 1
-MOTOR1_R_PWM_PIN = 2
+MOTOR1_F_PWM_PIN = 3
+MOTOR1_R_PWM_PIN = 5
 MOTOR2_F_PWM_PIN = 3
 MOTOR2_R_PWM_PIN = 4
 
@@ -15,15 +15,15 @@ MOTOR2_R_PWM_PIN = 4
 GPIO.setmode(GPIO.BCM)    
 GPIO.setup(MOTOR1_F_PWM_PIN,GPIO.OUT)
 GPIO.setup(MOTOR1_R_PWM_PIN,GPIO.OUT)
-motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 4000)  # 4000 Hz frequency
-motor1_R_pwm = GPIO.PWM(MOTOR1_R_PWM_PIN, 4000)  # 4000 Hz frequency
+motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 20000)  # 4000 Hz frequency
+motor1_R_pwm = GPIO.PWM(MOTOR1_R_PWM_PIN, 20000)  # 4000 Hz frequency
 motor1_F_pwm.start(0)
 motor1_R_pwm.start(0)
 # Motor 2
 GPIO.setup(MOTOR2_F_PWM_PIN,GPIO.OUT)
 GPIO.setup(MOTOR2_R_PWM_PIN,GPIO.OUT)
-motor2_F_pwm = GPIO.PWM(MOTOR2_F_PWM_PIN, 4000)  # 4000 Hz frequency
-motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 4000)  # 4000 Hz frequency
+motor2_F_pwm = GPIO.PWM(MOTOR2_F_PWM_PIN, 20000)  # 4000 Hz frequency
+motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 20000)  # 4000 Hz frequency
 motor2_F_pwm.start(0)
 motor2_R_pwm.start(0)
 
