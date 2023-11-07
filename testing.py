@@ -12,7 +12,8 @@ MOTOR2_F_PWM_PIN = 3
 MOTOR2_R_PWM_PIN = 4
 
 # Motor 1
-GPIO.setmode(GPIO.BCM)    
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 GPIO.setup(MOTOR1_F_PWM_PIN,GPIO.OUT)
 GPIO.setup(MOTOR1_R_PWM_PIN,GPIO.OUT)
 motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 20000)  # 4000 Hz frequency
@@ -36,7 +37,6 @@ def hello_callback(data):
 # THis is only workijng if you have connect the Led to the GPIO 1 And connect other end to GND
 def light_callback(data):
     if data.data == "on":
-        GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
         GPIO.setup(1, GPIO.OUT)
         GPIO.output(1, GPIO.HIGH)
