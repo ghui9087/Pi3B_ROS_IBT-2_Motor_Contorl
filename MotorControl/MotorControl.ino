@@ -1,5 +1,6 @@
 /*
 IBT-2 Motor Control Board driven by Arduino.
+Created By Houming Ge for HackRover
 
 Speed and direction controlled by a potentiometer attached to analog input 0.
 One side pin of the potentiometer (either one) to ground; the other side pin to +5V
@@ -10,19 +11,33 @@ IBT-2 pin 2 (LPWM) to Arduino pin 6(PWM)
 IBT-2 pins 3 (R_EN), 4 (L_EN), 7 (VCC) to Arduino 5V pin
 IBT-2 pin 8 (GND) to Arduino GND
 IBT-2 pins 5 (R_IS) and 6 (L_IS) not connected
+
+If change the Pin connect, Change the Those Value as it was respond to:
+    Motor1_RPWM , Motor1_FRPM , Motor2_RPWM , Motor2_FRPM
+
+Those Pin Should Support the analogWrite function to be able to control the speed of the mortor
+
+If the DEBUG LED Pin change, it need to be support dig
 */
 
 #include <Arduino.h>
+// #include <Thread.h>
+// #include <ThreadController.h>
 
-int Motor1_RPWM = 5;
-int Motor1_FRPM = 6;
+static int Motor1_RPWM = 5;
+static int Motor1_FRPM = 6;
 
-int Motor2_RPWM = 9;
-int Motor2_FRPM = 10;
+static int Motor2_RPWM = 9;
+static int Motor2_FRPM = 10;
 
-// defult LED On the ESP8266 D1
-uint8_t ledPin = LED_BUILTIN;
+// Defult Build In LED On the MOST ARDUNO BOARD / ESP32
+static uint8_t ledPin = LED_BUILTIN;
 
+// Gobal Static Values
+static int commandDelayMs = 10;
+static int errorBitOutPut = 3;
+
+// Gobal Values
 bool bufferString = false;
 String inputString = "";
 
@@ -31,13 +46,16 @@ int motor2S = 0;
 
 void setup()
 {
-  // Motor 1 setup ide
-  pinMode(Motor1_RPWM, OUTPUT);
-  pinMode(Motor1_FRPM, OUTPUT);
 
-  // Motor 2 setup ide
-  pinMode(Motor2_RPWM, OUTPUT);
-  pinMode(Motor2_FRPM, OUTPUT);
+  // TODO: NEED CHECKING if the pinMode need or not
+  // Docment say that analogWrite does not need pinMode <-- Not Test
+  // // Motor 1 setup ide
+  // pinMode(Motor1_RPWM, OUTPUT);
+  // pinMode(Motor1_FRPM, OUTPUT);
+
+  // // Motor 2 setup ide
+  // pinMode(Motor2_RPWM, OUTPUT);
+  // pinMode(Motor2_FRPM, OUTPUT);
 
   // Defult LED pin setup ide
   pinMode(ledPin, OUTPUT);
@@ -48,7 +66,7 @@ void setup()
   // Puse the command here
   while (!Serial)
   {
-    ;
+    errorStatusReport("Serial have not been connect", 0);
   }
 
   // Once the Serial is connect to the other system that support the Serial
@@ -63,101 +81,94 @@ void setup()
 // While loop that will not be stop unless the Ardurino Board is crash
 void loop()
 {
-
-  // If the bufferString is still in read or it was not finish, Skip during this loop
-  if (bufferString)
-  {
-    // Base status information checking
-    if (inputString.startsWith("status"))
-    {
-      sendingTheOB();
-    }
-    // Gettng speed fro mthe command "speed"
-    else if (inputString.startsWith("speed"))
-    {
-      inputString.remove(0, 5);
-      inputString.remove(inputString.length() - 1);
-
-      // Checking if the Motor speed and the select is in the digit format
-      // It can chekcing if the motor is in the negivte value
-      if (isStringDigit(inputString))
-      {
-
-        // Chekcing if the motor select is the Motor ID: 0
-        if (inputString.startsWith("0"))
-        {
-          inputString.remove(0, 1);
-          unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
-          motor1S = messageFromRBPI;
-
-          // Motor 1 contorl speed from the RBPI to the setting the PWM signal
-          // forward rotation
-          analogWrite(Motor1_RPWM, 0);
-          analogWrite(Motor1_FRPM, abs(motor1S));
-
-          // reverse rotation
-          if (motor1S < 0)
-          {
-            analogWrite(Motor1_FRPM, 0);
-            analogWrite(Motor1_RPWM, abs(motor1S));
-          }
-
-          // Return the current status of both motor
-          sendingTheOB();
-        }
-        // Chekcing if the motor select is the Motor ID: 1
-        else if (inputString.startsWith("1"))
-        {
-          inputString.remove(0, 1);
-          unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
-          motor2S = messageFromRBPI;
-
-          // Motor 2 contorl speed from the RBPI to the setting the PWM signal
-          // forward rotation
-          analogWrite(Motor2_FRPM, 0);
-          analogWrite(Motor2_RPWM, abs(motor2S));
-
-          // reverse rotation
-          if (motor2S < 0)
-          {
-            analogWrite(Motor2_RPWM, 0);
-            analogWrite(Motor2_FRPM, abs(motor2S));
-          }
-
-          // Return the current status of both motor
-          sendingTheOB();
-        }
-        // If they are not both Return the ERROR
-        else
-        {
-          Serial.println("Speed Data Error:/n Can not select the Motor ID:" + inputString);
-        }
-      }
-      // If the motor inforamtion is not the digit after the word "speed" Return ERROR
-      else
-      {
-        Serial.println("Speed Data Error: /n Motor is not in the digit format");
-      }
-    }
-    // If the command is not else status or speed Return the ERROR invald command
-    else
-    {
-      Serial.println("Inviald Command");
-    }
-    // reset the command
-    bufferString = false;
-    inputString = "";
-  }
-  // command delay 10ms
-  delay(10);
-  
-  // Once the Serial is available running the serial listerner 
-  if (Serial.available() > 0)
+  // If the bufferString is still in read or it was not finish, Puse the loop
+  while (!bufferString)
   {
     serialEventListerner();
   }
+
+  // Base status information checking
+  if (inputString.startsWith("status"))
+  {
+    sendingTheOB();
+  }
+  // Gettng speed from the command "speed"
+  else if (inputString.startsWith("speed"))
+  {
+    inputString.remove(0, 5);
+    inputString.remove(inputString.length() - 1);
+
+    // Checking if the Motor speed and the select is in the digit format
+    // It can chekcing if the motor is in the negivte value
+    if (isStringDigit(inputString))
+    {
+
+      // Chekcing if the motor select is the Motor ID: 0
+      if (inputString.startsWith("0"))
+      {
+        inputString.remove(0, 1);
+        unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
+        motor1S = messageFromRBPI;
+
+        // Motor 1 contorl speed from the RBPI to the setting the PWM signal
+        // forward rotation
+        analogWrite(Motor1_RPWM, 0);
+        analogWrite(Motor1_FRPM, abs(motor1S));
+
+        // reverse rotation
+        if (motor1S < 0)
+        {
+          analogWrite(Motor1_FRPM, 0);
+          analogWrite(Motor1_RPWM, abs(motor1S));
+        }
+      }
+      // Chekcing if the motor select is the Motor ID: 1
+      else if (inputString.startsWith("1"))
+      {
+        inputString.remove(0, 1);
+        unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
+        motor2S = messageFromRBPI;
+
+        // Motor 2 contorl speed from the RBPI to the setting the PWM signal
+        // forward rotation
+        analogWrite(Motor2_FRPM, 0);
+        analogWrite(Motor2_RPWM, abs(motor2S));
+
+        // reverse rotation
+        if (motor2S < 0)
+        {
+          analogWrite(Motor2_RPWM, 0);
+          analogWrite(Motor2_FRPM, abs(motor2S));
+        }
+      }
+      // If they are not both Return the ERROR
+      else
+      {
+        errorStatusReport("Speed Data Error:/n Can not select the Motor ID:" + inputString, 3);
+      }
+
+      // Return the current status of both motor
+      sendingTheOB();
+    }
+    // If the motor inforamtion is not the digit after the word "speed" Return ERROR
+    else
+    {
+      errorStatusReport("Speed Data Error: /n Motor is not in the digit format", 2);
+    }
+  }
+  // If the command is not else status or speed Return the ERROR invald command
+  else
+  {
+    errorStatusReport("Inviald Command", 2);
+  }
+  // reset the command
+  bufferString = false;
+
+  // command delay 10ms
+  delay(commandDelayMs);
 }
 
+// TODO: Need adding the over led
 /**
  * Status Chekcing with the Building board LED flash once
  * This will return the both motor current speed at the same time
@@ -169,10 +180,7 @@ void sendingTheOB()
 {
   char buffer[50];
   sprintf(buffer, "Current Speed 1: %d%%, 2: %d%%%", motor1S, motor2S);
-  Serial.println(buffer);
-  digitalWrite(ledPin, HIGH);
-  delay(50);
-  digitalWrite(LED_BUILTIN, LOW);
+  errorStatusReport(buffer, 1);
 }
 
 /**
@@ -186,22 +194,21 @@ void sendingTheOB()
  */
 void serialEventListerner()
 {
-  while (Serial.available())
+  inputString = "";
+  while (Serial.available() && !bufferString)
   {
-    char inchar = (char)Serial.read();
-    inputString += inchar;
-    if (inchar == '\n')
-    {
-      bufferString = true;
-    }
+    String data = Serial.readString();
+    data.trim();
+    bufferString = true;
+    inputString = data;
   }
 }
 
-/** 
+/**
  * Checking if the String is pure digit or else
  * If they are not pure digit it will return false
  * else return true
-*/
+ */
 bool isStringDigit(String data)
 {
   for (int i = 0; i < inputString.length(); i++)
@@ -217,4 +224,60 @@ bool isStringDigit(String data)
     }
   }
   return true;
+}
+
+// TODO: Need adding the over led
+/**
+ * Report the error to the serial with message about the type of error is.
+ * If the srial can not able to be read the method
+ * Will making the led to be flash in the order of the type of the error is respond to.
+ */
+void errorStatusReport(String message, int typeOfError)
+{
+  Serial.println(message);
+  int binary = decimalToBinary(typeOfError);
+  for (int k = 0; k < 3; k++)
+  {
+    digitalWrite(ledPin, HIGH);
+
+    if (binary % 10 == 1)
+      delay(400);
+    else
+      delay(100);
+
+    binary /= 10;
+    digitalWrite(ledPin, LOW);
+    delay(400);
+  }
+  delay(1000);
+}
+
+/**
+ * Convert the number in decimal to the binary
+ * The conver maybe not be full 32bits It have been limited size of array
+ * The size of the array is been set by the value errorBitOutPut
+ * No Matter what the value will have a value 1 before all the value input start
+ * This will be limit the num be 2^30
+ * 
+ * Example: 
+ *  Input 3: output 1011
+ * 
+ */
+int decimalToBinary(int num)
+{
+  int binary = 10;
+  for (int i = errorBitOutPut - 1; i >= 0; i--)
+  {
+    int mask = (1 << i);
+    if (num & mask)
+    {
+      binary += 1;
+      binary *= 10;
+    }
+    else
+    {
+      binary *= 10;
+    }
+  }
+  return binary;
 }

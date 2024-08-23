@@ -22,6 +22,7 @@ motor1_F_pwm = GPIO.PWM(MOTOR1_F_PWM_PIN, 20000)  # 20000 Hz frequency
 motor1_R_pwm = GPIO.PWM(MOTOR1_R_PWM_PIN, 20000)  # 20000 Hz frequency
 motor1_F_pwm.start(0)
 motor1_R_pwm.start(0)
+
 # Motor 2
 GPIO.setup(MOTOR2_F_PWM_PIN, GPIO.OUT)
 GPIO.setup(MOTOR2_R_PWM_PIN, GPIO.OUT)
@@ -30,19 +31,14 @@ motor2_R_pwm = GPIO.PWM(MOTOR2_R_PWM_PIN, 20000)  # 20000 Hz frequency
 motor2_F_pwm.start(0)
 motor2_R_pwm.start(0)
 
-class data:
-    
-    data = ""
-
-
-
+# TODO: REMOVE THE TESTING CASE AT THE END OF CODING
 # Testing funcation
 # return 'HI' as the respond for the call
 def hello_callback(data):
     if data.data == "hello":
         pub_hello.publish("HI")
 
-
+# TODO: REMOVE THE TESTING CASE AT THE END OF CODING
 # Led Pin Testing funcation
 # THis is only workijng if you have connect the Led to the GPIO 1 And connect other end to GND
 def light_callback(data):
@@ -52,6 +48,8 @@ def light_callback(data):
         GPIO.output(1, GPIO.HIGH)
         pub_light.publish("LED is On")
 
+# Setting the speed for the Speed once the node being called.
+# If it have not being call at hte startging place, the motor speed be time 100
 def speedBoost(data):
     global motorSpeed
 
@@ -85,6 +83,10 @@ def motorContorl(data):
     cMotor1Speed = motor1Speed
     cMotor2Speed = motor2Speed
 
+def motorStatus():
+    pub_Mstatus.publish("Current speed: M1 " + cMotor1Speed + " M2 " + cMotor2Speed)
+
+
 
 def clearUP():
     motor1_F_pwm.stop()
@@ -98,9 +100,11 @@ if __name__ == "__main__":
     pub_hello = rospy.Publisher("hello", String, latch=True, queue_size=10)
     pub_light = rospy.Publisher("light", String, latch=True, queue_size=10)
     pub_speed = rospy.Publisher("speed", Float64, latch=True, queue_size=10)
+    pub_Mstatus = rospy.Publisher("mStatus", latch=True, queue_size=10)
     rospy.Subscriber("hello", String, hello_callback)
     rospy.Subscriber("light", String, light_callback)
     rospy.Subscriber("motorcontorl", Float64, motorContorl)
+    rospy.Subscriber('motorstatus', motorStatus)
     motorSpeed = 100
     try:
         rospy.spin()
