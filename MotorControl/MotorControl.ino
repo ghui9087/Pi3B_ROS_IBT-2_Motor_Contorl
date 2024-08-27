@@ -20,6 +20,14 @@ Those Pin Should Support the analogWrite function to be able to control the spee
 If the DEBUG LED Pin change, it need to be support dig
 */
 
+/**
+ * For Furture Coder:
+ * method stander 
+ *  sName: Serial Name - meanign the method will call the Serial class
+ */
+
+
+// TODO: Adding a map conver to conver the 0-100 to 0-255 base on the rated of cover
 #include <Arduino.h>
 // #include <Thread.h>
 // #include <ThreadController.h>
@@ -66,14 +74,14 @@ void setup()
   // Puse the command here
   while (!Serial)
   {
-    errorStatusReport("Serial have not been connect", 0);
+    sErrorStatus("Serial have not been connect", 0);
   }
 
   // Once the Serial is connect to the other system that support the Serial
   // loop the current status until First command have being send from the UART
   while (Serial.available() <= 0)
   {
-    sendingTheOB();
+    sSpeedInfo();
     delay(200);
   }
 }
@@ -84,13 +92,13 @@ void loop()
   // If the bufferString is still in read or it was not finish, Puse the loop
   while (!bufferString)
   {
-    serialEventListerner();
+    sEventListerner();
   }
 
   // Base status information checking
   if (inputString.startsWith("status"))
   {
-    sendingTheOB();
+    sSpeedInfo();
   }
   // Gettng speed from the command "speed"
   else if (inputString.startsWith("speed"))
@@ -144,22 +152,22 @@ void loop()
       // If they are not both Return the ERROR
       else
       {
-        errorStatusReport("Speed Data Error:/n Can not select the Motor ID:" + inputString, 3);
+        sErrorStatus("Speed Data Error:/n Can not select the Motor ID:" + inputString, 3);
       }
 
       // Return the current status of both motor
-      sendingTheOB();
+      sSpeedInfo();
     }
     // If the motor inforamtion is not the digit after the word "speed" Return ERROR
     else
     {
-      errorStatusReport("Speed Data Error: /n Motor is not in the digit format", 2);
+      sErrorStatus("Speed Data Error: /n Motor is not in the digit format", 2);
     }
   }
   // If the command is not else status or speed Return the ERROR invald command
   else
   {
-    errorStatusReport("Inviald Command", 2);
+    sErrorStatus("Inviald Command", 2);
   }
   // reset the command
   bufferString = false;
@@ -176,11 +184,11 @@ void loop()
  * Current Speed1: x%, 2: x%
  * Once the LEC flash once It mean the report have send back on the UART
  */
-void sendingTheOB()
+void sSpeedInfo()
 {
   char buffer[50];
   sprintf(buffer, "Current Speed 1: %d%%, 2: %d%%%", motor1S, motor2S);
-  errorStatusReport(buffer, 1);
+  sErrorStatus(buffer, 1);
 }
 
 /**
@@ -192,7 +200,7 @@ void sendingTheOB()
  * And rest the bufferString to true
  * Just Listerner not judgement
  */
-void serialEventListerner()
+void sEventListerner()
 {
   inputString = "";
   while (Serial.available() && !bufferString)
@@ -232,7 +240,7 @@ bool isStringDigit(String data)
  * If the srial can not able to be read the method
  * Will making the led to be flash in the order of the type of the error is respond to.
  */
-void errorStatusReport(String message, int typeOfError)
+void sErrorStatus(String message, int typeOfError)
 {
   Serial.println(message);
   int binary = decimalToBinary(typeOfError);
