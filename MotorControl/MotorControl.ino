@@ -21,13 +21,34 @@ If the DEBUG LED Pin change, it need to be support dig
 */
 
 /**
+ * Command type:
+ *
+ * status :
+ * Getting the information for the both motors for their speed and dirction
+ *
+ *
+ * speedXXXXX :
+ * Setting a speed for one motor for the speed its need to be resign to
+ * The example for the speed type of command are:
+ * speed0-100 - meaning that the motor 1 is been set the speed to the -100 % of the motor output in the revse dirction
+ *
+ * speed112 - meaning that the motor 2 is been set the speed to the 12 % of the motor output in the forward dirction
+ *
+ * Error example:
+ * //TODO: adding the conver to product the error input from the user
+ * speed1-1333 meanign that the motor 2 should be sign to the speed to the 1333 % however the MAX value is been only limited to 100
+ * This will cause the invaild command been return
+ *
+ */
+
+/**
  * For Furture Coder:
- * method stander 
+ * method stander
  *  sName: Serial Name - meanign the method will call the Serial class
  */
 
-
 // TODO: Adding a map conver to conver the 0-100 to 0-255 base on the rated of cover
+// TODO: Adding a random move for the cyber people to use
 #include <Arduino.h>
 // #include <Thread.h>
 // #include <ThreadController.h>
@@ -39,18 +60,21 @@ static int Motor2_RPWM = 9;
 static int Motor2_FRPM = 10;
 
 // Defult Build In LED On the MOST ARDUNO BOARD / ESP32
-static uint8_t ledPin = LED_BUILTIN;
+static uint8_t ledPin = 2;
 
 // Gobal Static Values
 static int commandDelayMs = 10;
 static int errorBitOutPut = 3;
+static int minInput = -100;
+static int maxInput = 100;
+static double mutlipler = 2.5;
 
 // Gobal Values
 bool bufferString = false;
 String inputString = "";
 
-int motor1S = 0;
-int motor2S = 0;
+double motor1S = 0;
+double motor2S = 0;
 
 void setup()
 {
@@ -104,7 +128,7 @@ void loop()
   else if (inputString.startsWith("speed"))
   {
     inputString.remove(0, 5);
-    inputString.remove(inputString.length() - 1);
+    inputString.remove(inputString.length());
 
     // Checking if the Motor speed and the select is in the digit format
     // It can chekcing if the motor is in the negivte value
@@ -116,18 +140,30 @@ void loop()
       {
         inputString.remove(0, 1);
         unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
-        motor1S = messageFromRBPI;
 
-        // Motor 1 contorl speed from the RBPI to the setting the PWM signal
-        // forward rotation
-        analogWrite(Motor1_RPWM, 0);
-        analogWrite(Motor1_FRPM, abs(motor1S));
-
-        // reverse rotation
-        if (motor1S < 0)
+        // checking if the input is in right range.
+        if (messageFromRBPI <= minInput && messageFromRBPI <= maxInput)
         {
-          analogWrite(Motor1_FRPM, 0);
-          analogWrite(Motor1_RPWM, abs(motor1S));
+          if (messageFromRBPI != 0)
+          {
+            motor1S = messageFromRBPI * mutlipler;
+          }
+
+          // Motor 1 contorl speed from the RBPI to the setting the PWM signal
+          // forward rotation
+          analogWrite(Motor1_RPWM, 0);
+          analogWrite(Motor1_FRPM, abs(motor1S));
+
+          // reverse rotation
+          if (motor1S < 0)
+          {
+            analogWrite(Motor1_FRPM, 0);
+            analogWrite(Motor1_RPWM, abs(motor1S));
+          }
+        }
+        else
+        {
+          sErrorStatus("Error input value is over flow than max", 5);
         }
       }
       // Chekcing if the motor select is the Motor ID: 1
@@ -135,18 +171,30 @@ void loop()
       {
         inputString.remove(0, 1);
         unsigned long messageFromRBPI = strtoul(inputString.c_str(), NULL, 10);
-        motor2S = messageFromRBPI;
 
-        // Motor 2 contorl speed from the RBPI to the setting the PWM signal
-        // forward rotation
-        analogWrite(Motor2_FRPM, 0);
-        analogWrite(Motor2_RPWM, abs(motor2S));
-
-        // reverse rotation
-        if (motor2S < 0)
+        // checking if input is in the right range.
+        if (messageFromRBPI >= minInput && messageFromRBPI <= maxInput)
         {
-          analogWrite(Motor2_RPWM, 0);
-          analogWrite(Motor2_FRPM, abs(motor2S));
+          if (messageFromRBPI != 0)
+          {
+            motor2S = messageFromRBPI * mutlipler;
+          }
+
+          // Motor 2 contorl speed from the RBPI to the setting the PWM signal
+          // forward rotation
+          analogWrite(Motor2_FRPM, 0);
+          analogWrite(Motor2_RPWM, abs(motor2S));
+
+          // reverse rotation
+          if (motor2S < 0)
+          {
+            analogWrite(Motor2_RPWM, 0);
+            analogWrite(Motor2_FRPM, abs(motor2S));
+          }
+        }
+        else
+        {
+          sErrorStatus("Error input value is over flow than max", 5);
         }
       }
       // If they are not both Return the ERROR
@@ -187,8 +235,9 @@ void loop()
 void sSpeedInfo()
 {
   char buffer[50];
+  String output = "Current Speed 1: %d%%, 2: %d%%%", motor1S, motor2S;
   sprintf(buffer, "Current Speed 1: %d%%, 2: %d%%%", motor1S, motor2S);
-  sErrorStatus(buffer, 1);
+  sErrorStatus(output, 1);
 }
 
 /**
@@ -266,10 +315,10 @@ void sErrorStatus(String message, int typeOfError)
  * The size of the array is been set by the value errorBitOutPut
  * No Matter what the value will have a value 1 before all the value input start
  * This will be limit the num be 2^30
- * 
- * Example: 
+ *
+ * Example:
  *  Input 3: output 1011
- * 
+ *
  */
 int decimalToBinary(int num)
 {
